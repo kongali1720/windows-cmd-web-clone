@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Prompt Full</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#000; color:#c0c0c0; font-family:'Consolas','Courier New',monospace; font-size:12px; overflow:hidden; }
+    ::selection { background:#0078d7; color:#fff; }
+    .window { display:flex; flex-direction:column; width:100vw; height:100vh; background:#000; border:1px solid #808080; }
+    .titlebar { background:linear-gradient(to bottom,#5a5a5a,#3d3d3d); height:22px; display:flex; align-items:center; padding:0 4px; font-size:11px; color:#fff; border-bottom:1px solid #2a2a2a; }
+    .menu-bar { background:linear-gradient(to bottom,#f0f0f0,#d4d0c8); height:20px; display:flex; align-items:center; padding:0 4px; font-size:11px; color:#000; border-bottom:1px solid #808080; }
+    .menu-item { padding:0 8px; cursor:pointer; }
+    .menu-item:hover { background:#b0b0b0; }
+    .toolbar { background:linear-gradient(to bottom,#e8e5e2,#d4d0c8); height:28px; display:flex; align-items:center; padding:2px 4px; border-bottom:1px solid #808080; gap:1px; }
+    .toolbar-btn { width:23px; height:22px; background:linear-gradient(to bottom,#f0f0f0,#d4d0c8); border:1px outset #d4d0c8; font-size:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .toolbar-separator { width:1px; height:20px; background:#808080; margin:0 2px; }
+    .window-controls { display:flex; gap:0; margin-left:auto; }
+    .control-btn { width:16px; height:14px; background:linear-gradient(to bottom,#f0f0f0,#d4d0c8); border:1px outset #d4d0c8; font-size:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; }
+    .terminal-wrapper { flex:1; display:flex; flex-direction:column; }
+    .terminal-content { background:#000; color:#c0c0c0; padding:4px; font-family:'Consolas',monospace; white-space:pre; font-size:12px; line-height:1.0; overflow:auto; flex:1; }
+    #commandInput { background:#000; color:#c0c0c0; border:none; font-family:'Consolas',monospace; font-size:12px; line-height:1.0; width:100%; outline:none; }
+    .prompt { color:#c0c0c0; }
+    .resizer { height:5px; background:#555; cursor:ns-resize; }
+    .dropdown { position:relative; display:inline-block; }
+    .dropdown-content { display:none; position:absolute; background:#f9f9f9; min-width:160px; box-shadow:0 8px 16px rgba(0,0,0,0.2); padding:2px; z-index:1; color:#000; border:1px solid #808080; }
+    .dropdown-content a { color:black; padding:4px 8px; text-decoration:none; display:block; }
+    .dropdown-content a:hover { background:#ddd; }
+    .dropdown:hover .dropdown-content { display:block; }
+    .window.minimized { display:none; }
+    .window.maximized { width:100vw; height:100vh; position:fixed; top:0; left:0; z-index:1000; }
+</style>
+</head>
+<body>
+<div class="window" id="cmdWindow">
+    <div class="titlebar">
+        <span style="font-size:11px;">Administrator: Command Prompt</span>
+        <div class="window-controls">
+            <div class="control-btn" onclick="minimizeWindow()">_</div>
+            <div class="control-btn" onclick="maximizeWindow()">□</div>
+            <div class="control-btn" onclick="closeWindow()">×</div>
+        </div>
+    </div>
+
+    <div class="menu-bar">
+        <div class="dropdown"><span class="menu-item">File</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="newFileMenu()">New</a>
+                <a href="#" onclick="openFileMenu()">Open</a>
+                <a href="#" onclick="saveFileMenu()">Save</a>
+                <a href="#" onclick="saveAsFileMenu()">Save As</a>
+                <a href="#" onclick="exitFileMenu()">Exit</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Edit</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="undoEditMenu()">Undo</a>
+                <a href="#" onclick="redoEditMenu()">Redo</a>
+                <a href="#" onclick="cutEditMenu()">Cut</a>
+                <a href="#" onclick="copyEditMenu()">Copy</a>
+                <a href="#" onclick="pasteEditMenu()">Paste</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">View</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="zoomInViewMenu()">Zoom In</a>
+                <a href="#" onclick="zoomOutViewMenu()">Zoom Out</a>
+                <a href="#" onclick="fullScreenViewMenu()">Full Screen</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Insert</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="insertDateMenu()">Date</a>
+                <a href="#" onclick="insertTimeMenu()">Time</a>
+                <a href="#" onclick="insertSymbolMenu()">Symbol</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Format</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="fontFormatMenu()">Font</a>
+                <a href="#" onclick="colorFormatMenu()">Color</a>
+                <a href="#" onclick="alignmentFormatMenu()">Alignment</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Tools</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="checkSpellingToolsMenu()">Check Spelling</a>
+                <a href="#" onclick="wordCountToolsMenu()">Word Count</a>
+                <a href="#" onclick="optionsToolsMenu()">Options</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Table</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="insertTableMenu()">Insert Table</a>
+                <a href="#" onclick="deleteTableMenu()">Delete Table</a>
+                <a href="#" onclick="formatTableMenu()">Format Table</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Window</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="newWindowMenu()">New Window</a>
+                <a href="#" onclick="cascadeWindowMenu()">Cascade</a>
+                <a href="#" onclick="tileWindowMenu()">Tile</a>
+            </div>
+        </div>
+        <div class="dropdown"><span class="menu-item">Help</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="viewHelpMenu()">View Help</a>
+                <a href="#" onclick="aboutHelpMenu()">About</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-btn" onclick="newFile()">📁</div>
+        <div class="toolbar-btn" onclick="saveFile()">💾</div>
+        <div class="toolbar-btn" onclick="printFile()">🖨️</div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-btn" onclick="cutText()">✂️</div>
+        <div class="toolbar-btn" onclick="copyText()">📋</div>
+        <div class="toolbar-btn" onclick="pasteText()">📄</div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-btn" onclick="undoAction()">↶</div>
+        <div class="toolbar-btn" onclick="redoAction()">↷</div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-btn" onclick="searchContent()">🔍</div>
+        <div class="toolbar-btn" onclick="refreshContent()">🔄</div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-btn" onclick="showChart()">📊</div>
+        <div class="toolbar-btn" onclick="showGraph()">📈</div>
+        <div class="toolbar-btn" onclick="openSettings()">⚙️</div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-btn" onclick="showHelp()">❓</div>
+    </div>
+
+    <div class="terminal-wrapper">
+        <div class="terminal-content" id="terminalContent">
+Microsoft Windows [Version 10.0.19044.1706]
+(c) Microsoft Corporation. All rights reserved.
+
+<span class="prompt">C:\Users\Administrator></span><input type="text" id="commandInput" autofocus>
+        </div>
+        <div class="resizer" id="resizer"></div>
+    </div>
+</div>
+
+<script>
+const commandInput = document.getElementById('commandInput');
+const terminalContent = document.getElementById('terminalContent');
+const cmdWindow = document.getElementById('cmdWindow');
+let isMaximized = false;
+
+// Command Enter
+commandInput.addEventListener('keydown', function(event) {
+    if (event.key==='Enter') {
+        const command = commandInput.value;
+        commandInput.value='';
+        terminalContent.innerHTML+='<br><span class="prompt">C:\\Users\\Administrator></span>'+command;
+        terminalContent.innerHTML+='<br>'+command;
+        terminalContent.innerHTML+='<br><span class="prompt">C:\\Users\\Administrator></span><input type="text" id="commandInput" autofocus>';
+        const newInput = terminalContent.lastChild;
+        newInput.focus();
+        event.preventDefault();
+    }
+});
+commandInput.focus();
+
+// Toolbar & Menu functions (log in terminal)
+function newFile(){terminalContent.innerHTML+="<br>Creating a new file...";}
+function saveFile(){terminalContent.innerHTML+="<br>Save File clicked!";}
+function printFile(){terminalContent.innerHTML+="<br>Print File clicked!";}
+function cutText(){terminalContent.innerHTML+="<br>Cut Text clicked!";}
+function copyText(){terminalContent.innerHTML+="<br>Copy Text clicked!";}
+function pasteText(){terminalContent.innerHTML+="<br>Paste Text clicked!";}
+function undoAction(){terminalContent.innerHTML+="<br>Undo Action clicked!";}
+function redoAction(){terminalContent.innerHTML+="<br>Redo Action clicked!";}
+function searchContent(){terminalContent.innerHTML+="<br>Search Content clicked!";}
+function refreshContent(){terminalContent.innerHTML+="<br>Refresh Content clicked!";}
+function showChart(){terminalContent.innerHTML+="<br>Show Chart clicked!";}
+function showGraph(){terminalContent.innerHTML+="<br>Show Graph clicked!";}
+function openSettings(){terminalContent.innerHTML+="<br>Open Settings clicked!";}
+function showHelp(){terminalContent.innerHTML+="<br>Show Help clicked!";}
+
+// Window Controls
+function minimizeWindow(){cmdWindow.classList.add("minimized");}
+function maximizeWindow(){cmdWindow.classList.toggle("maximized"); isMaximized=!isMaximized;}
+function closeWindow(){cmdWindow.style.display="none";}
+
+// Menu functions
+function newFileMenu(){terminalContent.innerHTML+="<br>File > New clicked!";}
+function openFileMenu(){terminalContent.innerHTML+="<br>File > Open clicked!";}
+function saveFileMenu(){terminalContent.innerHTML+="<br>File > Save clicked!";}
+function saveAsFileMenu(){terminalContent.innerHTML+="<br>File > Save As clicked!";}
+function exitFileMenu(){terminalContent.innerHTML+="<br>File > Exit clicked!";}
+function undoEditMenu(){terminalContent.innerHTML+="<br>Edit > Undo clicked!";}
+function redoEditMenu(){terminalContent.innerHTML+="<br>Edit > Redo clicked!";}
+function cutEditMenu(){terminalContent.innerHTML+="<br>Edit > Cut clicked!";}
+function copyEditMenu(){terminalContent.innerHTML+="<br>Edit > Copy clicked!";}
+function pasteEditMenu(){terminalContent.innerHTML+="<br>Edit > Paste clicked!";}
+function zoomInViewMenu(){terminalContent.innerHTML+="<br>View > Zoom In clicked!";}
+function zoomOutViewMenu(){terminalContent.innerHTML+="<br>View > Zoom Out clicked!";}
+function fullScreenViewMenu(){terminalContent.innerHTML+="<br>View > Full Screen clicked!";}
+function insertDateMenu(){terminalContent.innerHTML+="<br>Insert > Date clicked!";}
+function insertTimeMenu(){terminalContent.innerHTML+="<br>Insert > Time clicked!";}
+function insertSymbolMenu(){terminalContent.innerHTML+="<br>Insert > Symbol clicked!";}
+function fontFormatMenu(){terminalContent.innerHTML+="<br>Format > Font clicked!";}
+function colorFormatMenu(){terminalContent.innerHTML+="<br>Format > Color clicked!";}
+function alignmentFormatMenu(){terminalContent.innerHTML+="<br>Format > Alignment clicked!";}
+function checkSpellingToolsMenu(){terminalContent.innerHTML+="<br>Tools > Check Spelling clicked!";}
+function wordCountToolsMenu(){terminalContent.innerHTML+="<br>Tools > Word Count clicked!";}
+function optionsToolsMenu(){terminalContent.innerHTML+="<br>Tools > Options clicked!";}
+function insertTableMenu(){terminalContent.innerHTML+="<br>Table > Insert Table clicked!";}
+function deleteTableMenu(){terminalContent.innerHTML+="<br>Table > Delete Table clicked!";}
+function formatTableMenu(){terminalContent.innerHTML+="<br>Table > Format Table clicked!";}
+function newWindowMenu(){terminalContent.innerHTML+="<br>Window > New Window clicked!";}
+function cascadeWindowMenu(){terminalContent.innerHTML+="<br>Window > Cascade clicked!";}
+function tileWindowMenu(){terminalContent.innerHTML+="<br>Window > Tile clicked!";}
+function viewHelpMenu(){terminalContent.innerHTML+="<br>Help > View Help clicked!";}
+function aboutHelpMenu(){terminalContent.innerHTML+="<br>Help > About clicked!";}
+
+// Resizer
+const resizer=document.getElementById('resizer');
+let isResizing=false;
+resizer.addEventListener('mousedown', function(e){isResizing=true; document.body.style.cursor='ns-resize';});
+document.addEventListener('mousemove', function(e){
+    if(!isResizing) return;
+    const wrapper=document.querySelector('.terminal-wrapper');
+    wrapper.style.flex='none';
+    wrapper.style.height=(e.clientY - wrapper.getBoundingClientRect().top)+'px';
+});
+document.addEventListener('mouseup', function(e){isResizing=false; document.body.style.cursor='default';});
+</script>
+</body>
+</html>
